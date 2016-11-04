@@ -30,20 +30,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
+import android.os.*;
 
 import org.altbeacon.beacon.logging.LogManager;
 import org.altbeacon.beacon.logging.Loggers;
-import org.altbeacon.beacon.service.BeaconService;
-import org.altbeacon.beacon.service.MonitoringStatus;
-import org.altbeacon.beacon.service.RangeState;
-import org.altbeacon.beacon.service.RangedBeacon;
-import org.altbeacon.beacon.service.RegionMonitoringState;
-import org.altbeacon.beacon.service.RunningAverageRssiFilter;
-import org.altbeacon.beacon.service.StartRMData;
+import org.altbeacon.beacon.service.*;
 import org.altbeacon.beacon.service.scanner.NonBeaconLeScanCallback;
 import org.altbeacon.beacon.simulator.BeaconSimulator;
 
@@ -602,7 +593,7 @@ public class BeaconManager {
         }
         Message msg = Message.obtain(null, BeaconService.MSG_START_RANGING, 0, 0);
         StartRMData obj = new StartRMData(region, callbackPackageName(), this.getScanPeriod(), this.getBetweenScanPeriod(), this.mBackgroundMode);
-        msg.obj = obj;
+        msg.setData(createBundle(obj));
         serviceMessenger.send(msg);
         synchronized (rangedRegions) {
             rangedRegions.add(region);
@@ -630,7 +621,7 @@ public class BeaconManager {
         }
         Message msg = Message.obtain(null, BeaconService.MSG_STOP_RANGING, 0, 0);
         StartRMData obj = new StartRMData(region, callbackPackageName(), this.getScanPeriod(), this.getBetweenScanPeriod(), this.mBackgroundMode);
-        msg.obj = obj;
+        msg.setData(createBundle(obj));
         serviceMessenger.send(msg);
         synchronized (rangedRegions) {
             Region regionToRemove = null;
@@ -666,7 +657,7 @@ public class BeaconManager {
         LogManager.d(TAG, "Starting monitoring region "+region+" with uniqueID: "+region.getUniqueId());
         Message msg = Message.obtain(null, BeaconService.MSG_START_MONITORING, 0, 0);
         StartRMData obj = new StartRMData(region, callbackPackageName(), this.getScanPeriod(), this.getBetweenScanPeriod(), this.mBackgroundMode);
-        msg.obj = obj;
+        msg.setData(createBundle(obj));
         serviceMessenger.send(msg);
         synchronized (monitoredRegions) {
             // If we are already tracking the state of this region, send a callback about it
@@ -697,7 +688,7 @@ public class BeaconManager {
         }
         Message msg = Message.obtain(null, BeaconService.MSG_STOP_MONITORING, 0, 0);
         StartRMData obj = new StartRMData(region, callbackPackageName(), this.getScanPeriod(), this.getBetweenScanPeriod(), this.mBackgroundMode);
-        msg.obj = obj;
+        msg.setData(createBundle(obj));
         serviceMessenger.send(msg);
         synchronized (monitoredRegions) {
             Region regionToRemove = null;
@@ -730,7 +721,7 @@ public class BeaconManager {
         LogManager.d(TAG, "updating background flag to %s", mBackgroundMode);
         LogManager.d(TAG, "updating scan period to %s, %s", this.getScanPeriod(), this.getBetweenScanPeriod());
         StartRMData obj = new StartRMData(this.getScanPeriod(), this.getBetweenScanPeriod(), this.mBackgroundMode);
-        msg.obj = obj;
+        msg.setData(createBundle(obj));
         serviceMessenger.send(msg);
     }
 
@@ -909,6 +900,23 @@ public class BeaconManager {
         } else {
             return foregroundBetweenScanPeriod;
         }
+    }
+
+    private Bundle createBundle(StartRMData startRMData) {
+        Bundle bundle = new Bundle();
+        if (startRMData == null) {
+            return bundle;
+        }
+
+        if (startRMData.getRegionData() != null) {
+            bundle.putString(ParcelKey.REGION_KEY, startRMData.getRegionData().getUniqueId());
+        }
+        bundle.putString(ParcelKey.PACKAGE_NAME, startRMData.getCallbackPackageName());
+        bundle.putLong(ParcelKey.SCAN_PERIOD, startRMData.getScanPeriod());
+        bundle.putLong(ParcelKey.BETWEEN_SCAN_PERIOD, startRMData.getBetweenScanPeriod());
+        bundle.putBoolean(ParcelKey.BACKGROUND_FLAG, startRMData.getBackgroundFlag());
+
+        return bundle;
     }
 
     private void verifyServiceDeclaration() {
