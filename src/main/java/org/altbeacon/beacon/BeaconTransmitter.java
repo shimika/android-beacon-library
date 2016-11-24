@@ -191,7 +191,7 @@ public class BeaconTransmitter {
 
             settingsBuilder.setAdvertiseMode(mAdvertiseMode);
             settingsBuilder.setTxPowerLevel(mAdvertiseTxPowerLevel);
-            settingsBuilder.setConnectable(false);
+            settingsBuilder.setConnectable(true);
 
             mBluetoothLeAdvertiser.startAdvertising(settingsBuilder.build(), dataBuilder.build(), getAdvertiseCallback());
             LogManager.d(TAG, "Started advertisement with callback: %s", getAdvertiseCallback());
