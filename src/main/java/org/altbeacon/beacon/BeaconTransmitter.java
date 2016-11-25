@@ -198,6 +198,9 @@ public class BeaconTransmitter {
 
         } catch (Exception e){
             LogManager.e(e, TAG, "Cannot start advertising due to exception");
+          if (getAdvertiseCallback() != null) {
+            getAdvertiseCallback().onStartFailure(99);
+          }
         }
     }
 
